@@ -7,5 +7,5 @@ script = ExtResource("1_settlers")
 faction_name = "Settlers"
 tech_affinity = true
 cultural = true
-color = Color(0.2, 0.6, 1.0, 1.0)
+color = Color(0.0, 0.0, 1.0, 1.0)
 description = "Masters of technology and culture. They build, trade, and innovate."
