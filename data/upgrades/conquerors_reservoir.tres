@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Resource" path="res://data/factions/conquerors.tres" id="1_conquerors"]
+
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_name = "Arcane Reservoir"
+description = "Conqueror magic upgrade. Increases MP capacity by 20."
+faction = ExtResource("1_conquerors")
+sp_bonus = 0
+mp_bonus = 20
+attack_bonus = 0.0
+defense_bonus = 0.0
+sp_cost = 0
+mp_cost = 30

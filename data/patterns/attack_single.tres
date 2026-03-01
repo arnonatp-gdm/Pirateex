@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_pattern.gd" id="1_pattern"]
+
+[resource]
+script = ExtResource("1_pattern")
+pattern_name = "Single Shot"
+ball_count = 1
+ball_pearl_value = 1
+mp_cost = 1
+cooldown = 5.0
+spread_degrees = 0.0

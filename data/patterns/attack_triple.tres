@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_pattern.gd" id="1_pattern"]
+
+[resource]
+script = ExtResource("1_pattern")
+pattern_name = "Triple Burst"
+ball_count = 3
+ball_pearl_value = 1
+mp_cost = 3
+cooldown = 5.0
+spread_degrees = 20.0

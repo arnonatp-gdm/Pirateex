@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/wall_pattern.gd" id="1_pattern"]
+
+[resource]
+script = ExtResource("1_pattern")
+pattern_name = "Standard Wall"
+sp_cost = 5
+wall_pearl_value = 1
+segment_count = 1
+segment_length = 80.0
+cooldown = 5.0

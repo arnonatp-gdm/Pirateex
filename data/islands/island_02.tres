@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/island_data.gd" id="1_island"]
+[ext_resource type="Resource" path="res://data/factions/conquerors.tres" id="1_conquerors"]
+
+[resource]
+script = ExtResource("1_island")
+island_name = "Ironcliff"
+island_id = 2
+position = Vector2(870.2, 452.9)
+controlling_faction = ExtResource("1_conquerors")
+has_town = true
+description = "Island 02 of Terrentia."
