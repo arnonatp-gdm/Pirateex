@@ -1,11 +1,1 @@
-[gd_resource type="Resource" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/resources/faction_data.gd" id="1_conquerors"]
-
-[resource]
-script = ExtResource("1_conquerors")
-faction_name = "Conquerors"
-tech_affinity = false
-cultural = true
-color = Color(0.8, 0.2, 0.8, 1.0)
-description = "Wielders of magic who spread culture and domination through arcane arts."
+color = Color(1.0, 1.0, 0.0, 1.0)
