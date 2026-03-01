@@ -1,12 +1,38 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+# Ship Class Resource
+# Standard list of ship classes
 
-[ext_resource type="Script" path="res://scripts/resources/ship_data.gd" id="1_corvette"]
+class Corvette:
+    # Define corvette properties
+    pass
 
-[resource]
-script = ExtResource("1_corvette")
-ship_name = "Corvette"
-ship_type = "corvette"
-base_sp = 100
-base_mp = 100
-upgrade_slots = 3
-description = "A swift, versatile starter ship suited for any captain."
+class Frigate:
+    # Define frigate properties
+    pass
+
+class Destroyer:
+    # Define destroyer properties
+    pass
+
+class Cruiser:
+    # Define cruiser properties
+    pass
+
+class Battlecruiser:
+    # Define battlecruiser properties
+    pass
+
+class Battleship:
+    # Define battleship properties
+    pass
+
+class Dreadnought:
+    # Define dreadnought properties
+    pass
+
+class SuperDreadnought:
+    # Define super dreadnought properties
+    pass
+
+class Decacity:
+    # Define decacity properties
+    pass
