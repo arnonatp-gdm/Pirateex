@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/island_data.gd" id="1_island"]
+[ext_resource type="Resource" path="res://data/factions/pirates.tres" id="1_pirates"]
+
+[resource]
+script = ExtResource("1_island")
+island_name = "Brackenfell"
+island_id = 7
+position = Vector2(387.6, 407.9)
+controlling_faction = ExtResource("1_pirates")
+has_town = true
+description = "Island 07 of Terrentia."

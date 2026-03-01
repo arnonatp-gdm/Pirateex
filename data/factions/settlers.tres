@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/faction_data.gd" id="1_settlers"]
+
+[resource]
+script = ExtResource("1_settlers")
+faction_name = "Settlers"
+tech_affinity = true
+cultural = true
+color = Color(0.2, 0.6, 1.0, 1.0)
+description = "Masters of technology and culture. They build, trade, and innovate."

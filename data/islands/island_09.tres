@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/island_data.gd" id="1_island"]
+[ext_resource type="Resource" path="res://data/factions/settlers.tres" id="1_settlers"]
+
+[resource]
+script = ExtResource("1_island")
+island_name = "Driftwood"
+island_id = 9
+position = Vector2(445.4, 227.4)
+controlling_faction = ExtResource("1_settlers")
+has_town = true
+description = "Island 09 of Terrentia."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Resource" path="res://data/factions/pirates.tres" id="1_pirates"]
+
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_name = "Powder Keg Launcher"
+description = "Pirates tech upgrade. Improves attack potency."
+faction = ExtResource("1_pirates")
+sp_bonus = 0
+mp_bonus = 0
+attack_bonus = 0.5
+defense_bonus = 0.0
+sp_cost = 25
+mp_cost = 0

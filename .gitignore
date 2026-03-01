@@ -1,0 +1,9 @@
+# Godot 4 .gitignore
+.godot/
+*.translation
+export_presets.cfg
+
+# Mono/C# specifics
+.mono/
+data_*/
+mono_crash.*.json
