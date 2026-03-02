@@ -32,12 +32,21 @@ const DEFAULT_WALL_PRIMARY     := preload("res://data/patterns/wall_standard.tre
 const DEFAULT_WALL_SECONDARY   := preload("res://data/patterns/wall_double.tres")
 
 const BALL_SPEED := 250.0
+const MIDLINE_Y  := 360.0
+## Cooldown clamp range (seconds) for timer_mod wall effects.
+const TIMER_MOD_MIN := 2.0
+const TIMER_MOD_MAX := 10.0
+## Timer effect values used by faction-specific timer_mod walls.
+const CONQUEROR_TIMER_EFFECT :=  2.0   # slows player attack cooldown
+const FERAL_TIMER_EFFECT     := -2.0   # speeds up AI attack cooldown
 
 ## Enemy starting pearls (from phase context).
 var _enemy_sp: int = 80
 var _enemy_mp: int = 80
 var _enemy_bounty: int = 0
 var _npc_id: int = -1
+var _enemy_faction: String = "Settlers"
+var _enemy_tier: int = 1
 
 ## Starting values for flee threshold.
 var _start_player_sp: int = 0
@@ -68,13 +77,16 @@ func _ready() -> void:
 	_enemy_mp = context.get("enemy_mp", 80)
 	_enemy_bounty = context.get("enemy_bounty", 0)
 	_npc_id = context.get("npc_id", -1)
+	_enemy_faction = context.get("enemy_faction", "Settlers")
+	_enemy_tier = context.get("enemy_tier", 1)
 
 	_start_player_sp = PlayerState.sp
 	_start_player_mp = PlayerState.mp
 
 	print("[SeaCombat] Start – player SP=", PlayerState.sp,
 		" MP=", PlayerState.mp,
-		" enemy SP=", _enemy_sp, " MP=", _enemy_mp)
+		" enemy SP=", _enemy_sp, " MP=", _enemy_mp,
+		" faction=", _enemy_faction, " tier=", _enemy_tier)
 
 	_build_paddles()
 	_build_player_abilities()
@@ -85,12 +97,16 @@ func _build_paddles() -> void:
 	_player_paddle = PADDLE_SCENE.instantiate()
 	_player_paddle.position = Vector2(640, 680)
 	_player_paddle.is_player = true
+	_player_paddle.ship_tier = 1          # player defaults to tier 1
+	_player_paddle.faction = "Settlers"   # player defaults to Settlers shape
 	add_child(_player_paddle)
 
 	# Enemy paddle at top.
 	_enemy_paddle = PADDLE_SCENE.instantiate()
 	_enemy_paddle.position = Vector2(640, 40)
 	_enemy_paddle.is_player = false
+	_enemy_paddle.ship_tier = _enemy_tier
+	_enemy_paddle.faction = _enemy_faction
 	add_child(_enemy_paddle)
 
 func _build_player_abilities() -> void:
@@ -102,9 +118,11 @@ func _build_player_abilities() -> void:
 func _build_ai() -> void:
 	_ai = load("res://scenes/sea_combat/ai_opponent.gd").new()
 	_ai.setup(_enemy_sp, _enemy_mp,
-		DEFAULT_ATTACK_PRIMARY, DEFAULT_WALL_PRIMARY, _enemy_paddle)
+		DEFAULT_ATTACK_PRIMARY, DEFAULT_WALL_PRIMARY, _enemy_paddle,
+		_enemy_faction, _enemy_tier)
 	_ai.ai_fled.connect(_on_ai_fled)
 	_ai.ai_fired.connect(_on_ai_fired)
+	_ai.ai_walled.connect(_on_ai_walled)
 	add_child(_ai)
 
 # ──────────────────────────────────────────────────────────────────────
@@ -229,18 +247,49 @@ func _player_deploy_wall() -> void:
 	_place_walls(pattern, "player")
 	_check_zero_pearls()
 
-func _place_walls(pattern: WallPattern, owner: String) -> void:
+func _place_walls(pattern: WallPattern, owner: String,
+		wall_type: String = "standard") -> void:
 	var anchor_paddle := _player_paddle if owner == "player" else _enemy_paddle
 	var base_y := anchor_paddle.position.y - 30 if owner == "player" \
 		else anchor_paddle.position.y + 30
 	for i in range(pattern.segment_count):
 		var offset_x := (i - (pattern.segment_count - 1) / 2.0) * (pattern.segment_length + 10)
+		var seg_x := anchor_paddle.position.x + offset_x
+		# Push any existing player walls that overlap this new segment upward.
+		if owner == "player":
+			_push_player_walls_up(seg_x, pattern.segment_length, base_y)
+		# Determine timer_effect for timer_mod walls based on AI faction.
+		var te := 0.0
+		if wall_type == "timer_mod" and owner == "enemy":
+			te = FERAL_TIMER_EFFECT if _enemy_faction == "Ferals" else CONQUEROR_TIMER_EFFECT
 		var wall: Node2D = WALL_SCENE.instantiate()
-		wall.setup(pattern.wall_pearl_value, pattern.segment_length, owner)
-		wall.position = Vector2(anchor_paddle.position.x + offset_x, base_y)
+		wall.setup(pattern.wall_pearl_value, pattern.segment_length, owner, wall_type, te)
+		wall.position = Vector2(seg_x, base_y)
 		add_child(wall)
 		_walls.append(wall)
-	print("[SeaCombat] Deployed %d wall segment(s)" % pattern.segment_count)
+	print("[SeaCombat] Deployed %d wall segment(s) type=%s" % [pattern.segment_count, wall_type])
+
+## Push existing player-owned walls that x-overlap with the given new segment
+## upward by 40 px (toward midline). Walls crossing y ≤ MIDLINE_Y are destroyed.
+func _push_player_walls_up(new_x: float, seg_len: float, _base_y: float) -> void:
+	const PUSH_STEP := 40.0
+	var new_left  := new_x - seg_len / 2.0
+	var new_right := new_x + seg_len / 2.0
+	for wall in _walls:
+		if not is_instance_valid(wall):
+			continue
+		if wall.owner_id != "player":
+			continue
+		var wr := wall.get_rect()
+		# Overlap check in x.
+		if new_left < wr.end.x and new_right > wr.position.x:
+			var new_y := wall.position.y - PUSH_STEP
+			if new_y <= MIDLINE_Y:
+				print("[SeaCombat] Wall pushed past midline – destroyed.")
+				wall.queue_free()
+			else:
+				wall.position.y = new_y
+				print("[SeaCombat] Wall pushed up to y=", new_y)
 
 # ──────────────────────────────────────────────────────────────────────
 # Physics / collision
@@ -284,13 +333,15 @@ func _check_ball_paddle_hits() -> void:
 			b.queue_free()
 	_balls = _balls.filter(func(b): return is_instance_valid(b))
 
+## Returns true if any paddle segment overlaps the ball position.
 func _paddle_overlaps_ball(paddle: Node2D, ball: Node2D) -> bool:
-	var pr := paddle.get_rect()
-	return pr.has_point(ball.position)
+	for rect in paddle.get_segment_rects():
+		if rect.has_point(ball.position):
+			return true
+	return false
 
 func _check_ball_wall_hits() -> void:
 	_walls = _walls.filter(func(w): return is_instance_valid(w))
-	var to_remove: Array = []
 	for ball in _balls:
 		if not is_instance_valid(ball):
 			continue
@@ -298,10 +349,52 @@ func _check_ball_wall_hits() -> void:
 			if not is_instance_valid(wall):
 				continue
 			if wall.get_rect().has_point(ball.position):
-				ball.bounce_off_wall(wall.pearl_value)
+				# Ball bounces (direction reversal based on wall_pv for standard walls).
+				ball.bounce_off_wall(wall.pearl_value if wall.wall_type != "bouncing" else 0)
 				if not is_instance_valid(ball):
-					break  # ball vanished
+					break  # ball vanished after bounce
+				# Wall loses SP (bouncing walls are immune inside take_hit).
+				var pv_before := wall.pearl_value
+				wall.take_hit()
+				# Apply wall-type effects if wall survived (or just hit).
+				if pv_before > 0:
+					match wall.wall_type:
+						"ball_shooting":
+							if is_instance_valid(wall):
+								# Shoot a ball from the wall toward the opposing side.
+								var fire_dir := Vector2(0, 1) if wall.owner_id == "enemy" \
+									else Vector2(0, -1)
+								_fire_wall_ball(wall.position, fire_dir, wall.owner_id)
+						"timer_mod":
+							_apply_timer_mod(wall.timer_effect)
 	_balls = _balls.filter(func(b): return is_instance_valid(b))
+
+## Spawn a ball from a wall (ball_shooting mechanic).
+func _fire_wall_ball(from_pos: Vector2, direction: Vector2, owner: String) -> void:
+	var ball: Node2D = BALL_SCENE.instantiate()
+	ball.setup(1, direction * BALL_SPEED, owner)
+	ball.position = from_pos
+	add_child(ball)
+	_balls.append(ball)
+	print("[SeaCombat] Wall fires a ball! owner=", owner)
+
+## Apply a timer modification from a timer_mod wall.
+## Positive effect slows the player; negative effect speeds up the AI.
+func _apply_timer_mod(effect: float) -> void:
+	if effect > 0:
+		# Slow player attack cooldowns (result clamped to [TIMER_MOD_MIN, TIMER_MOD_MAX]).
+		_player_attack_primary.cooldown_remaining = clamp(
+			_player_attack_primary.cooldown_remaining + effect, TIMER_MOD_MIN, TIMER_MOD_MAX)
+		_player_attack_secondary.cooldown_remaining = clamp(
+			_player_attack_secondary.cooldown_remaining + effect, TIMER_MOD_MIN, TIMER_MOD_MAX)
+		print("[SeaCombat] Timer mod +%.1fs on player cooldown" % effect)
+	elif effect < 0:
+		# Speed up AI attack cooldown (only when countdown is active).
+		if _ai.attack_ability != null and _ai.attack_ability.cooldown_remaining > 0:
+			_ai.attack_ability.cooldown_remaining = clamp(
+				_ai.attack_ability.cooldown_remaining + effect,
+				0.0, TIMER_MOD_MAX)
+			print("[SeaCombat] Timer mod %.1fs on AI cooldown" % effect)
 
 func _check_ball_ball_hits() -> void:
 	for i in range(_balls.size()):
@@ -355,6 +448,9 @@ func _on_ai_fled(_remaining_sp: int, _remaining_mp: int) -> void:
 func _on_ai_fired(pattern: AttackPattern) -> void:
 	_fire_balls(pattern, "enemy")
 
+func _on_ai_walled(pattern: WallPattern, wall_type: String) -> void:
+	_place_walls(pattern, "enemy", wall_type)
+
 func _end_combat(won: bool, fled: bool) -> void:
 	if _combat_over:
 		return
@@ -385,9 +481,9 @@ func _draw() -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(10, 715),
 		"SP:%d  MP:%d%s" % [PlayerState.sp, PlayerState.mp, flee_hint],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
-	# HUD – enemy stats.
+	# HUD – enemy stats (with faction and tier).
 	draw_string(ThemeDB.fallback_font, Vector2(10, 15),
-		"ENEMY SP:%d  MP:%d" % [_ai.sp, _ai.mp],
+		"ENEMY SP:%d  MP:%d  [%s T%d]" % [_ai.sp, _ai.mp, _enemy_faction, _enemy_tier],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.ORANGE_RED)
 	# Pattern mode.
 	var mode_str := "SECONDARY" if _use_secondary else "PRIMARY"

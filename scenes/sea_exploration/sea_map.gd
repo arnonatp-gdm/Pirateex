@@ -98,12 +98,15 @@ func _try_attack_nearest_npc() -> void:
 			continue
 		if _player_pos.distance_to(node.position) < ATTACK_DIST:
 			var npc: Dictionary = node.npc_data
-			print("[SeaMap] Initiating combat vs NPC: ", npc["faction"])
+			print("[SeaMap] Initiating combat vs NPC: ", npc["faction"],
+				" tier=", npc.get("ship_tier", 1))
 			GameState.switch_phase(GameState.Phase.SEA_COMBAT, {
 				"enemy_sp": npc["sp"],
 				"enemy_mp": npc["mp"],
 				"enemy_bounty": npc["bounty"],
 				"npc_id": npc["id"],
+				"enemy_faction": npc.get("faction", "Settlers"),
+				"enemy_tier": npc.get("ship_tier", 1),
 			})
 			return
 	print("[SeaMap] No NPC in range to attack.")
