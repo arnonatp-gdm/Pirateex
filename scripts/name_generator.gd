@@ -1,31 +1,20 @@
-# Name Generator
+# GDScript implementation
 
-## Naming Specifications
+# Function to generate a captain's name based on faction data
+func generate_captain_name(faction: FactionData, rng: RandomNumberGenerator = null) -> String:
+    var first_name = _pick(faction.first_name_list, rng)
+    var last_name = _pick(faction.last_name_list, rng)
+    return first_name + " " + last_name
 
-### Captain Format
-- Format: `Captain [Tool|Spell] [Job|Actioner] the [Temperament]`
-- Derived from: `FactionData.tech_affinity` and `FactionData.cultural`
+# Function to generate a ship's name based on faction data and ship class
+func generate_ship_name(faction: FactionData, ship_class: String = "Corvette", rng: RandomNumberGenerator = null) -> String:
+    var class_name = ship_class
+    var last_name = _pick(faction.last_name_list, rng)
+    var first_name = _pick(faction.first_name_list, rng)
+    return class_name + " " + last_name + " " + first_name
 
-### Ship Format
-- Format: `[Class] [lname] [fname]`
-- Where: 
-  - `lname` is `Material` if `cultural` else `Result`
-  - `fname` is `StateOfMatter` if `tech_affinity` else `BodyPart`
-- Default: `ship_class='Corvette'`
-
-## Word Lists and Helper Functions
-
-### Word Lists
-- Tools and Spells: [List of tools and spells]
-- Jobs and Actioners: [List of jobs and actioners]
-- Temperaments: [List of temperaments]
-- Materials: [List of materials]
-- States of Matter: [List of states]
-- Body Parts: [List of body parts]
-- Results: [List of results]
-
-### Helper Function _pick
-```gdscript
-func _pick(array):
-    return array[randi() % array.size()]
-```
+# Helper function to pick a random item from a list
+func _pick(array: Array, rng: RandomNumberGenerator = null) -> Variant:
+    if rng == null:
+        return array[randi() % array.size()]
+    return array[rng.rand_range(0, array.size() - 1)]
