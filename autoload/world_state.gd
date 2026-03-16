@@ -72,6 +72,7 @@ func _spawn_npc_ships() -> void:
 				"destination": dest_idx,
 				"sp": 80,
 				"mp": 80,
+				"ship_tier": randi_range(1, 3),
 				"consecutive_successes": 0,
 				"is_famous": false,
 				"bounty": 0,
